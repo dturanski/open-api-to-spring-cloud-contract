@@ -22,16 +22,18 @@ Contract.make {
  
         body ("""
 
-{
-    "id": 0,
-    "username": "someUsername",
-    "firstName": "someFirstName",
-    "lastName": "someLastName",
-    "email": "someEmail",
-    "password": "somePassword",
-    "phone": "somePhone",
-    "userStatus": 0
-}
+[
+    {
+        "id": 0,
+        "username": "someUsername",
+        "firstName": "someFirstName",
+        "lastName": "someLastName",
+        "email": "someEmail",
+        "password": "somePassword",
+        "phone": "somePhone",
+        "userStatus": 0
+    }
+]
             
 """)
          

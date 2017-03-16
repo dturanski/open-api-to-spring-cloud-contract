@@ -106,10 +106,9 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 		    def schemaType = (schema.type == 'array') ? schema.items : schema 
 			def bodyType = schemaTypeFromRef(schemaType)
 			def builder = new groovy.json.JsonBuilder()
-
-			schemaToJsonExample(builder, schemaDefinitions,bodyType, schema)
-			 
-			return builder.toPrettyString()
+			def content = [schemaToJsonExample(builder, schemaDefinitions,bodyType)]
+			return (schema.type == 'array') ?
+			new groovy.json.JsonBuilder(content).toPrettyString() : builder.toPrettyString()
 		}	
 	}
 	
@@ -143,7 +142,7 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 		
 		
 		queryParams.eachWithIndex {qp, i ->
-			println("$endpoint qp: $qp $i")
+			 
 			def delim = (i == 0) ? '?' : '&'			
 			def name = qp.name 
 			def val
@@ -184,10 +183,10 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 	/*
 	 * Recursively generate sample JSON document for a declared schema type
 	 */
-	def schemaToJsonExample(builder, schemaDefinitions, type, rootSchema) {
+	def schemaToJsonExample(builder, schemaDefinitions, type) {
 		def schemaProperties = schemaDefinitions["${type}"].properties
 		
-		 builder  { 
+		def result = builder  { 
 			schemaProperties.each {name,schema ->
 				 if (schema.type  && schema.type != 'array') {
 					 "$name"  sampleValueForSimpleTypeField(name, schema)		
@@ -195,19 +194,21 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 				 if (schema.type == 'array') {
 					 def array = []
 					 if (schema['$ref']){
-					   "$name" array << schemaToJsonExample(builder, schemaDefinitions, schemaTypeFromRef(schema.items),schema)
+					   "$name" array << schemaToJsonExample(builder, schemaDefinitions, schemaTypeFromRef(schema.items))
 					 } 
 					 else {
 					    "$name" array << sampleValueForSimpleTypeField(name, schema)							
                      }					 
 				 } 
 				 else if (schema['$ref']) { 
-					"$name"  schemaToJsonExample(builder, schemaDefinitions, schemaTypeFromRef(schema), schema)
+					"$name"  schemaToJsonExample(builder, schemaDefinitions, schemaTypeFromRef(schema))
 				 }
 				 
 			}
 		 
 		}
+		
+		return result
 		
 	}
 	
@@ -215,7 +216,7 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 	 * Parse the schema type name from the $ref attribute
 	 */
 	def schemaTypeFromRef(schema) {
-	     println "schema :$schema"
+	     
 		(schema['$ref'] =~ /#\/definitions\/(.+)/)[0][1]
 	}
 	
