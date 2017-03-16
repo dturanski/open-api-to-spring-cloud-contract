@@ -1,0 +1,595 @@
+
+swagger: '2.0'
+info:
+  title: Commercial Lines Business Insurance Transaction and LOB Request Write-Side API 
+  description: Transaction and LOB Request aggregate Write-Side API to manage the overall transaction context. /transactions is the aggegate root through which this API will be modeled. Basically, the business user will start and manage transactions explicitly (or implicitly). Past-tense events will be published after the transaction completes. The model depicted in this API is exposed for write operations only per the CQRS pattern, it is possible that the entites encapsulated within the service implementation are further enriched to perform the business logic that's expected.
+  version: "1.0.0"
+  termsOfService: http://www.libertymutual.com/terms/
+  contact:
+    name: rohit.sood@libertymutual.com
+  license:
+    name: Liberty Mutual Insurance. All rights reserved.
+    url: http://www.libertymutual.com/license
+# the domain of the service (implementations can ignore this)
+host: api.ci.lmig.com
+# array of all schemes that the API supports
+schemes:
+  - https
+# will be prefixed to all paths
+basePath: /v1
+produces:
+  - application/json
+  - application/xml
+paths:
+  /transactions:
+    post:
+      summary: |
+        Starts a transaction. It can start either a Multi-line App or a Mono-line App Transaction. 
+        All  types of transaction types are supported via this API. Business rules/logic will be executed to ensure this operation can be executed. 
+        Transactions are a container that tracks and manages the overall processing.
+      description: |
+        This is the aggregate root of the API. If only one LOB request exists under the transaction then a monoline app request is created. 
+        A multi-line app request contains more than one 'lob requests'. Each 'lob request' has an associated policy app/lob. This end-point contains a single request or multiple requests - and executes the StartRequestCommand. 
+        The Multiline Request endpoint creates a new multi-line app request (and child requests if provided). This API should be used for all requests (monoline app or multi-line apps). This is the  Multi-Line App Request Aggregate Root.
+
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+     
+      parameters:
+        - in: body
+          name: transaction
+          description: |
+            If a transaction_id is not provided, one will be created by the service.
+            Account is optional. 
+            Agency is optional. 
+            These can be added to the transaction later.
+          required: true
+          schema:
+            $ref: "#/definitions/Transaction"
+      tags:
+        - Transaction
+      responses:
+        200:
+          description: Successful addition of a transaction.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'            
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'          
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
+
+
+  /transactions/from/{tansactionId}:
+    post:
+      summary: |
+        Copy a transaction. 
+      description: |
+        It can copy transactions that is governed by business rules/logic e.g. new business transaction that is unissued. 
+        All  types of copy operations are supported via this API. Business rules/logic will be executed to ensure this operation can be executed. 
+        Transactions are a container that tracks and manages the overall processing.
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+     
+      parameters:
+        - in: path
+          name: tansactionId
+          description: ID of the transaction that needs to be provided under which an Account should be added.
+          required: true
+          type: string
+            
+      tags:
+        - Transaction
+      responses:
+        200:
+          description: Successful addition of a transaction.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'            
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'          
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
+
+  /transactions/{tansactionId}/accounts:
+    post:
+      summary: |
+        Add an account to an existing transaction. 
+       
+      description: |
+        Add an account to the transaction but once added it can only be updated, not removed or updated.
+        Only one account can be added to a transaction.
+        An account isn't created - it is only associated here.
+        If an account was previously added, then this will result in an error. (See Error Responses).
+        Validation of transaction and accounts will be performed.
+        Business rules/logic will be executed to ensure this operation can be executed.
+        
+ 
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: tansactionId
+          description: ID of the transaction that needs to be provided under which an Account should be added.
+          required: true
+          type: string
+        - in: body
+          name: account
+          description: Add an account to an existing transaction. If one already exists this will error out.
+          required: true
+          schema:
+            $ref: "#/definitions/Account"
+
+      tags:
+        - Account
+      responses:
+        200:
+          description: Successful addition of an account to a transaction.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'            
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'          
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
+            
+  /transactions/{tansactionId}/agencies:
+    post:
+      summary: |
+        Adds an agency to an existing transaction. 
+        Business rules/logic will be executed to ensure this operation can be executed.
+      description: |
+        Add an agency to the transaction but once added it can only be updated, not removed or updated via this API.
+        Checks will be made to ensure that no previous agency is associated.
+        An agency is not created, rather an existing agency is associated to the transaction.
+ 
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: tansactionId
+          description: ID of the request that needs to be fetched.
+          required: true
+          type: string
+        - in: body
+          name: agency
+          description: Add an agency to an existing transaction. If one already exists this will error out.
+          required: true
+          schema:
+            $ref: "#/definitions/Agency"
+
+      tags:
+        - Agency
+      responses:
+        200:
+          description: Successful operation.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'          
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'          
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'          
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  
+  /transactions/{tansactionId}:
+    delete:
+      summary: Logically delete a transaction. Business rules/logic will be executed to ensure this operation can be executed.
+      description: Deletes the transaction based on the ID - but this should be expected to be a logical delete. It maybe deleted in the future.
+ 
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: tansactionId
+          description: ID of the request that needs to be fetched.
+          required: true
+          type: string
+
+      tags:
+        - Transaction
+      responses:
+        200:
+          description: Successful deletion of a transaction.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'          
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'          
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  
+  /transactions/{tansactionId}/lobRequests:
+    post:
+      summary: Create a lob-request under tansactionId. Business rules/logic will be executed to ensure this operation can be executed.
+      description: |
+        The Request Command endpoint creates a new request. The Policy is optional and can be added later. 
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: tansactionId
+          description: ID of the request that needs to be fetched.
+          required: true
+          type: string
+      
+        - in: body
+          name: body
+          description: A request that should be created.
+          required: true
+          schema:
+            $ref: "#/definitions/LOBRequest"
+      tags:
+        - LOB Request
+      responses:
+        200:
+          description: Successful addition of a lob request.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'          
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'          
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+    put:
+      summary: Update a LOB Request under a transaction. Execute StartRequestCommand.
+      description: |
+        The Request Command endpoint creates a new request. The Policy is optional and can be added later. 
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: tansactionId
+          description: ID of the request that needs to be fetched.
+          required: true
+          type: string
+     
+        - in: body
+          name: Request
+          description: A request that should be created.
+          required: true
+          schema:
+            $ref: "#/definitions/LOBRequest"
+      tags:
+        - LOB Request
+      responses:
+        200:
+          description: Successful addition of a request.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'          
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'          
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+
+    delete:
+      summary: Delete the request (logically). 
+      description: |
+        The Delete Request Command endpoint creates a new request. The Policy is optional and can be added later. 
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: tansactionId
+          description: ID of the transaction.
+          required: true
+          type: string
+
+      tags:
+        - LOB Request
+      responses:
+        200:
+          description: Successful deletion of a lobrequest.
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'          
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'          
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /transactions/{transactionId}/lobRequests/{lobCd}/policies:
+    post:
+      summary: Create a ine Policy Under a LOB Rquest. AddPolicyToRequestCommand.
+      description: |
+        The ine Policy Command endpoint creates a new request. The Policy is optional and can be added later. Adding a ine policy will result in an event 'policy addede to request' event and will be consumed by the Policy domain.
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: transactionId
+          type: string
+          description: A lob code under which the ine policy should be created.
+          required: true
+        - in: path
+          name: lobCd
+          type: string
+          description: A lob code under which the ine policy should be created.
+          required: true
+        - in: body
+          name: ine policy
+          description: A request that should be created.
+          required: true
+          schema:
+            $ref: "#/definitions/Policy"
+      tags:
+        - Policy
+      responses:
+        200:
+          description: Successful addition of  Policy 
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'          
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'          
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /transactions/{transactionId}/lobRequests/{lobCd}/underwritingInstructions:
+    post:
+      summary: add an instruction under a request. 
+      description: |
+        The request may have instructions from underwriters that are added to the request. E.g. "Policy Block" can be added with remarks.
+      consumes:
+        - application/json
+        - application/xml
+      produces:
+        - application/json
+        - application/xml
+      parameters:
+        - in: path
+          name: transactionId
+          type: string
+          description: A request_id under which the ine policy should be created.
+          required: true
+        - in: path
+          name: lobCd
+          type: string
+          description: A lob code under which the ine policy should be created.
+          required: true 
+        - in: body
+          name: Underwriting instruction
+          description: An underwriting instruction that should be created.
+          required: true
+          schema:
+            $ref: "#/definitions/UnderwritingInstruction"
+      tags:
+        - Underwriting Instruction
+      responses:
+        200:
+          description: Successful addition of  Policy 
+        400:
+          description: Invalid request received - please check the API Contract.
+          schema:
+            $ref: '#/definitions/Error'          
+        403:
+          description: Forbidden. Client is not permitted to perform this operation.
+          schema:
+            $ref: '#/definitions/Error'          
+        409:
+          description: Conflict. Resource already exists.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+#Entities defined with Normal Case and properties defined with camel case.
+definitions:
+  Transaction:
+    type: object
+    properties:
+      transactionId:
+        type: string
+        description: Unique identifier representing a specific transaction.
+      status:
+        type: string
+        description: The status of the transaction.
+      transactionType:
+        type: string
+        description: The activity for the User Intent     
+      accountNumber:
+        $ref: '#/definitions/Account'
+      agency:
+        $ref: '#/definitions/Agency'
+      lobRequests:
+        type: array
+        items:
+          $ref: '#/definitions/LOBRequest'
+
+  LOBRequest:
+    type: object
+    properties:
+      lobCd:
+        type: string
+        description: Line of business code. This is unique per transaction.
+      status:
+        type: string
+        description: Status of the LOBRequest.
+      
+      startDate:
+        type: string
+        format: date
+        description: The date when the request was started.
+      completionDate:
+        type: string
+        format: date
+        description: The date when the request was completed.
+
+      policy:
+        $ref: '#/definitions/Policy'
+      underwritinginstructions:
+        type: array
+        items:
+          $ref: '#/definitions/UnderwritingInstruction'
+
+  Policy:
+    type: object
+    properties:
+      policyId:
+        type: string
+        description: This is a unique identified (GUID) that represents the policy aggregate.
+      lobCd:
+        type: string
+        description: Line of business code.
+      policyTerm:
+        type: number
+        description: Represents the policy term number.
+        
+  UnderwritingInstruction:
+    type: object
+    properties:
+      instructionType:
+        type: string
+        description: The instruction type.
+      instructionDate:
+        type: string
+        format: date-time
+        description: Represents the instruction date-time.
+      instructionRemark:
+        type: string
+        description: Represents the instruction date-time.
+
+  Account:
+      type: object
+      properties:
+        accountNumber:
+          type: string
+          description: The account number for the account.
+  Agency:
+      type: object
+      properties:
+        agencyNumber:
+          type: string
+          description: The agency number for the account.
+
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string
