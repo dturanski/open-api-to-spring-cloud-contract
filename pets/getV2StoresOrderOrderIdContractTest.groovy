@@ -27,7 +27,24 @@ For valid response try integer IDs with value <= 5 or > 10. Other values will ge
    }
       
    response {
-       status 200
+       status 200  
+        body ("""
+
+{
+    "id": 0,
+    "petId": 0,
+    "quantity": 0,
+    "shipDate": "2017-03-17T10:54:21.347",
+    "status": "someStatus",
+    "complete": true
+}
+            
+""")
+        headers {
+          header('Content-Type', 'application/json')
+        }
+        		  
+	 }
    }
 }
 		

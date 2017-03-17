@@ -27,7 +27,26 @@ Contract.make {
    }
       
    response {
-       status 200
+       status 200  
+        body ("""
+
+{
+    "id": 0,
+    "username": "someUsername",
+    "firstName": "someFirstName",
+    "lastName": "someLastName",
+    "email": "someEmail",
+    "password": "somePassword",
+    "phone": "somePhone",
+    "userStatus": 0
+}
+            
+""")
+        headers {
+          header('Content-Type', 'application/json')
+        }
+        		  
+	 }
    }
 }
 		

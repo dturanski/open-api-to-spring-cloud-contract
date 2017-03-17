@@ -27,7 +27,17 @@ Contract.make {
    }
       
    response {
-       status 200
+       status 200  
+        body ("""
+
+someBody
+            
+""")
+        headers {
+          header('Content-Type', 'application/json')
+        }
+        		  
+	 }
    }
 }
 		

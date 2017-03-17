@@ -39,8 +39,8 @@ The Multiline Request endpoint creates a new multi-line app request (and child r
         {
             "lobCd": "someLobCd",
             "status": "someStatus",
-            "startDate": "2017-01-01",
-            "completionDate": "2017-01-01",
+            "startDate": "2017-03-17",
+            "completionDate": "2017-03-17",
             "policy": {
                 "policyId": "somePolicyId",
                 "lobCd": "someLobCd",
@@ -49,7 +49,7 @@ The Multiline Request endpoint creates a new multi-line app request (and child r
             "underwritinginstructions": [
                 {
                     "instructionType": "someInstructionType",
-                    "instructionDate": "2017-01-01T00:00:00.0",
+                    "instructionDate": "2017-03-17T09:47:19.53",
                     "instructionRemark": "someInstructionRemark"
                 }
             ]

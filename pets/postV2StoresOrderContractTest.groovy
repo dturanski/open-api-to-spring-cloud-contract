@@ -26,7 +26,7 @@ Contract.make {
     "id": 0,
     "petId": 0,
     "quantity": 0,
-    "shipDate": "2017-01-01T00:00:00.0",
+    "shipDate": "2017-03-17T10:54:21.332",
     "status": "someStatus",
     "complete": true
 }
@@ -40,7 +40,24 @@ Contract.make {
    }
       
    response {
-       status 200
+       status 200  
+        body ("""
+
+{
+    "id": 0,
+    "petId": 0,
+    "quantity": 0,
+    "shipDate": "2017-03-17T10:54:21.334",
+    "status": "someStatus",
+    "complete": true
+}
+            
+""")
+        headers {
+          header('Content-Type', 'application/json')
+        }
+        		  
+	 }
    }
 }
 		

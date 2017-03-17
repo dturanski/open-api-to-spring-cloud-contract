@@ -27,7 +27,36 @@ Muliple tags can be provided with comma seperated strings. Use tag1, tag2, tag3 
    }
       
    response {
-       status 200
+       status 200  
+        body ("""
+
+[
+    {
+        "id": 0,
+        "category": {
+            "id": 0,
+            "name": "someName"
+        },
+        "name": "doggie",
+        "photoUrls": [
+            "somePhotoUrls"
+        ],
+        "tags": [
+            {
+                "id": 0,
+                "name": "someName"
+            }
+        ],
+        "status": "someStatus"
+    }
+]
+            
+""")
+        headers {
+          header('Content-Type', 'application/json')
+        }
+        		  
+	 }
    }
 }
 		

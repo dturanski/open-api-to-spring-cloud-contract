@@ -27,7 +27,34 @@ Returns a pet when ID < 10.  ID > 10 or nonintegers will simulate API error cond
    }
       
    response {
-       status 200
+       status 200  
+        body ("""
+
+{
+    "id": 0,
+    "category": {
+        "id": 0,
+        "name": "someName"
+    },
+    "name": "doggie",
+    "photoUrls": [
+        "somePhotoUrls"
+    ],
+    "tags": [
+        {
+            "id": 0,
+            "name": "someName"
+        }
+    ],
+    "status": "someStatus"
+}
+            
+""")
+        headers {
+          header('Content-Type', 'application/json')
+        }
+        		  
+	 }
    }
 }
 		

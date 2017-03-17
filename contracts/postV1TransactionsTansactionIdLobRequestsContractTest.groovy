@@ -26,8 +26,8 @@ The Request Command endpoint creates a new request. The Policy is optional and c
 {
     "lobCd": "someLobCd",
     "status": "someStatus",
-    "startDate": "2017-01-01",
-    "completionDate": "2017-01-01",
+    "startDate": "2017-03-17",
+    "completionDate": "2017-03-17",
     "policy": {
         "policyId": "somePolicyId",
         "lobCd": "someLobCd",
@@ -36,7 +36,7 @@ The Request Command endpoint creates a new request. The Policy is optional and c
     "underwritinginstructions": [
         {
             "instructionType": "someInstructionType",
-            "instructionDate": "2017-01-01T00:00:00.0",
+            "instructionDate": "2017-03-17T09:47:19.155",
             "instructionRemark": "someInstructionRemark"
         }
     ]

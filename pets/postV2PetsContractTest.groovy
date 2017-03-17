@@ -28,12 +28,15 @@ Contract.make {
         "id": 0,
         "name": "someName"
     },
-    "name": "someName",
+    "name": "doggie",
     "photoUrls": [
-        null
+        "somePhotoUrls"
     ],
     "tags": [
-        null
+        {
+            "id": 0,
+            "name": "someName"
+        }
     ],
     "status": "someStatus"
 }
@@ -47,7 +50,8 @@ Contract.make {
    }
       
    response {
-       status 200
+       status 200 		  
+	 }
    }
 }
 		

@@ -1,3 +1,5 @@
+import java.lang.annotation.AnnotationFormatError
+
 @GrabConfig( )
 @Grab('org.yaml:snakeyaml:1.17')
 import org.yaml.snakeyaml.Yaml
@@ -51,8 +53,10 @@ class OpenApi2SpringCloudContractGenerator {
 		def basePath = openApiSpec.basePath
 		def endpoint = "${basePath}${path.key}"
 		def httpMethod = path.value.keySet()[0]
+		def pathSpec = path.value[httpMethod]
 		
-		 injectParamsIntoEndpoint(endpoint, path.value[httpMethod]);
+		
+		 injectParamsIntoEndpoint(endpoint, pathSpec);
 
 		def contract = """
 package contracts.transactions
@@ -62,7 +66,7 @@ import org.springframework.cloud.contract.spec.Contract
 Contract.make {
     request {
        description(\"\"\"
-${path.value[httpMethod].description}
+${pathSpec.description}
 
             Given:
                 ${httpMethod.toUpperCase()} to ${endpoint}
@@ -74,11 +78,14 @@ ${path.value[httpMethod].description}
 			
         \"\"\")
         method \'${httpMethod.toUpperCase()}\'
-        url \'${injectParamsIntoEndpoint(endpoint, path.value[httpMethod])}\'\n"""
-		if (httpMethod == 'post' || httpMethod == 'put'){
+        url \'${injectParamsIntoEndpoint(endpoint, pathSpec)}\'\n"""
+		
+		def requestBodySchema = pathSpec.parameters.find{it.in == 'body'}?.schema
+		
+		if (requestBodySchema) {	
 		  contract = contract + """ 
         body (\"\"\"\n
-${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod])}
+${generateSampleJsonForBody(openApiSpec.definitions, requestBodySchema)}
             \n\"\"\")
         """
 		}
@@ -90,7 +97,20 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
    }
       
    response {
-       status 200
+       status 200 """
+		def responseBodySchema = pathSpec.responses['200']?.schema
+		if (responseBodySchema) {
+		  contract = contract + """ 
+        body (\"\"\"\n
+${generateSampleJsonForBody(openApiSpec.definitions, responseBodySchema)}
+            \n\"\"\")
+        headers {
+          header('Content-Type', 'application/json')
+        }
+        """
+		}
+contract = contract + """		  
+	 }
    }
 }
 		"""
@@ -98,18 +118,24 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 	}
 	
 	/*
-	 * Generate a sample JSON document for the Request body
+	 * Generate a sample JSON document for a Request or Response body
 	 */
-	def generateSampleJsonForReqestBody(schemaDefinitions, pathSpec) {
-		def schema = pathSpec.parameters.find{it.in == 'body'}?.schema
-		if (schema){
-		    def schemaType = (schema.type == 'array') ? schema.items : schema 
-			def bodyType = schemaTypeFromRef(schemaType)
-			def builder = new groovy.json.JsonBuilder()
-			def content = [schemaToJsonExample(builder, schemaDefinitions,bodyType)]
-			return (schema.type == 'array') ?
-			new groovy.json.JsonBuilder(content).toPrettyString() : builder.toPrettyString()
-		}	
+	def generateSampleJsonForBody(schemaDefinitions, schema) {
+		
+		def schemaType = (schema.type == 'array') ? schema.items : schema 
+		
+		if (schemaType['$ref']){
+		   def bodyType = schemaTypeFromRef(schemaType)
+		   def builder = new groovy.json.JsonBuilder()
+		   def content = [schemaToJsonExample(builder, schemaDefinitions,bodyType)]
+		   return (schema.type == 'array') ?
+			 new groovy.json.JsonBuilder(content).toPrettyString() : builder.toPrettyString()
+		}
+		else {
+			return sampleValueForSimpleTypeField("body",schemaType)
+		}
+		
+		
 	}
 	
 	/*
@@ -184,6 +210,7 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 	 * Recursively generate sample JSON document for a declared schema type
 	 */
 	def schemaToJsonExample(builder, schemaDefinitions, type) {
+		 
 		def schemaProperties = schemaDefinitions["${type}"].properties
 		
 		def result = builder  { 
@@ -192,15 +219,18 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 					 "$name"  sampleValueForSimpleTypeField(name, schema)		
 				 }
 				 if (schema.type == 'array') {
+					 
 					 def array = []
-					 if (schema['$ref']){
+					 if (schema.items['$ref']){
+						 
 					   "$name" array << schemaToJsonExample(builder, schemaDefinitions, schemaTypeFromRef(schema.items))
 					 } 
 					 else {
-					    "$name" array << sampleValueForSimpleTypeField(name, schema)							
+					    "$name" array << sampleValueForSimpleTypeField(name, schema.items)							
                      }					 
 				 } 
 				 else if (schema['$ref']) { 
+					  
 					"$name"  schemaToJsonExample(builder, schemaDefinitions, schemaTypeFromRef(schema))
 				 }
 				 
@@ -217,16 +247,22 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 	 */
 	def schemaTypeFromRef(schema) {
 	     
-		(schema['$ref'] =~ /#\/definitions\/(.+)/)[0][1]
+		def type = (schema['$ref'] =~ /#\/definitions\/(.+)/)[0][1]
+		 
+		return type
 	}
 	
 	/*
 	 * Generate a sample value for a simple type field
 	 */
 	def sampleValueForSimpleTypeField(name, property) {
+		if (property.example){
+			return property.example
+		}
 
 		def type = property.type
 		def format = property.format
+		
 		if (type == 'string') {
 			return applyFormatToStringField(format, name)
 		}
@@ -243,9 +279,11 @@ ${generateSampleJsonForReqestBody(openApiSpec.definitions, path.value[httpMethod
 	 */
 	def applyFormatToStringField(format,name) {
 		if (format == 'date-time'){
-			return "2017-01-01T00:00:00.0"
+			return new Date().format("yyyy-MM-dd'T'hh:mm:ss.S")
+			//return "2017-01-01T00:00:00.0"
 		}
 		else if (format == 'date') {
+			return new Date().format('yyyy-MM-dd')
 			return "2017-01-01"
 		}
 		return "some${name.capitalize()}"
